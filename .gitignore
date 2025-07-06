@@ -1,9 +1,9 @@
 .idea/
 .idea
-/generated/prisma
+.vscode/
 
-/node_modules/
-/prisma/generated/
+prisma/generated/
 
-/dist
+dist
 .env
+node_modules
