@@ -1,0 +1,12 @@
+
+npx prisma generate
+
+``
+npx prisma migrate dev --name <name of the script> --create-only
+npx prisma migrate deploy
+
+
+``If you made mistakes or want to reset:
+
+rm -rf prisma/migrations
+npx prisma migrate reset
