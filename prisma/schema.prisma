@@ -13,3 +13,134 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+
+model User {
+  id               String           @id @default(uuid())
+  email            String           @unique
+  passwordHash     String
+  name             String
+  bio              String?
+  profilePicture   String?
+  location         String?
+  interests        String[]
+  createdAt        DateTime         @default(now())
+  modifiedAt       DateTime         @updatedAt
+  modifiedBy       String?
+  concurrencyKey   String           @default(uuid())
+
+  activities       Activity[]       @relation("ActivityCreator")
+  activityParticipants ActivityParticipant[]
+  chatMessages      ChatMessage[]
+  feedbackGiven     UserFeedback[]   @relation("UserFeedbackFrom")
+  feedbackReceived  UserFeedback[]   @relation("UserFeedbackTo")
+  friendshipsSent   UserFriendship[] @relation("FriendshipUserA")
+  friendshipsReceived UserFriendship[] @relation("FriendshipUserB")
+}
+
+model Activity {
+  id               String           @id @default(uuid())
+  createdByUserId  String
+  title            String
+  description      String?
+  category         ActivityCategory
+  dateTime         DateTime
+  location         String?
+  maxParticipants  Int?
+  visibility       ActivityVisibility
+  createdAt        DateTime         @default(now())
+  modifiedAt       DateTime         @updatedAt
+  modifiedBy       String?
+  concurrencyKey   String           @default(uuid())
+
+  creator          User             @relation("ActivityCreator", fields: [createdByUserId], references: [id])
+  participants     ActivityParticipant[]
+  chatRoom         ChatRoom?
+  feedback         UserFeedback[]
+}
+
+model ActivityParticipant {
+  id               String   @id @default(uuid())
+  activityId       String
+  userId           String
+  status           ParticipantStatus
+  joinedAt         DateTime @default(now())
+
+  activity         Activity @relation(fields: [activityId], references: [id])
+  user             User     @relation(fields: [userId], references: [id])
+}
+
+model ChatRoom {
+  id               String   @id @default(uuid())
+  activityId       String   @unique
+  createdAt        DateTime @default(now())
+  modifiedAt       DateTime @updatedAt
+  modifiedBy       String?
+  concurrencyKey   String   @default(uuid())
+
+  activity         Activity @relation(fields: [activityId], references: [id])
+  messages         ChatMessage[]
+}
+
+model ChatMessage {
+  id               String   @id @default(uuid())
+  chatRoomId       String
+  senderUserId     String
+  message          String
+  sentAt           DateTime @default(now())
+
+  chatRoom         ChatRoom @relation(fields: [chatRoomId], references: [id])
+  sender           User     @relation(fields: [senderUserId], references: [id])
+}
+
+model UserFriendship {
+  id               String   @id @default(uuid())
+  userAId          String
+  userBId          String
+  status           FriendshipStatus
+  createdAt        DateTime @default(now())
+
+  userA            User     @relation("FriendshipUserA", fields: [userAId], references: [id])
+  userB            User     @relation("FriendshipUserB", fields: [userBId], references: [id])
+}
+
+model UserFeedback {
+  id               String   @id @default(uuid())
+  activityId       String
+  fromUserId       String
+  toUserId         String
+  rating           Int
+  comment          String?
+  createdAt        DateTime @default(now())
+
+  activity         Activity @relation(fields: [activityId], references: [id])
+  fromUser         User     @relation("UserFeedbackFrom", fields: [fromUserId], references: [id])
+  toUser           User     @relation("UserFeedbackTo", fields: [toUserId], references: [id])
+}
+
+enum ActivityCategory {
+  Lunch
+  Trip
+  Coffee
+  Party
+  Walk
+  Other
+}
+
+enum ActivityVisibility {
+  Public
+  FriendsOnly
+  Private
+}
+
+enum ParticipantStatus {
+  Joined
+  Pending
+  Cancelled
+}
+
+enum FriendshipStatus {
+  Pending
+  Accepted
+  Blocked
+}
